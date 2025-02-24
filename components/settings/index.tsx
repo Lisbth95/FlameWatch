@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { View, Text, Switch, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import {supabase} from '@/lib/supabase';
+import { useAuth } from "@/context/AuthContext";
 
 export default function SettingsScreen(){
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
@@ -12,7 +13,7 @@ export default function SettingsScreen(){
   const handleLogout = () => {
     Alert.alert("Cerrar sesión", "¿Estás seguro de que quieres salir?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Cerrar sesión", onPress: async() => await supabase.auth.signOut() },
+      { text: "Cerrar sesión", onPress: logout },
     ]);
   };
 

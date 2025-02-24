@@ -1,12 +1,8 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View,Text,TextInput,TouchableOpacity,StyleSheet} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {updateUserPassword} from '@/data/datasources/userDataSources';
+import { Try } from "expo-router/build/views/Try";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -14,12 +10,16 @@ export default function ChangePasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChangePassword = () => {
-    if (newPassword !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
-      return;
+  const handleChangePassword = async() => {
+    try{
+      if (newPassword !== confirmPassword) {
+        alert("Las contraseñas no coinciden");
+        return;
+      }
+      await updateUserPassword(newPassword);
+    }catch (error){
+      alert("Servicio no disponible, intente más tarde.");
     }
-    alert("Contraseña cambiada exitosamente");
   };
 
   return (

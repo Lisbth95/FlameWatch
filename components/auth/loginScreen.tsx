@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import {loginUser} from '@/api/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -11,13 +11,22 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-
-    if (error) {
-      Alert.alert("Error", "Usuario y/o contraseña incorrectos.");
+    const result = await loginUser(email, password);
+    console.log(result);
+    if (result.success) {
+      if (result.userData) {
+        router.push({
+          pathname: "/(home)"
+        });
+      } else {
+        Alert.alert("Información incompleta", "Por favor, completa tu perfil.");
+        // Redirigir a pantalla de edición de perfil
+        router.push({
+          pathname: "/(profile)"
+        });
+      }
     } else {
-      router.push("/(home)"); // Redirigir a la pantalla principal
+      Alert.alert("Error", "Usuario y/o contraseña incorrectos.");
     }
   };
 

@@ -1,123 +1,84 @@
-import { supabase } from "@/lib/supabase";
-import { User } from "@/data/types/UserTypes";
+import { User } from "@/data/models/users";
+import { auth, db, storage } from "@/api/firebase";
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { updatePassword } from "firebase/auth";
 
-class UserDatasource {
-  static async getCurrentUser(): Promise<User | null> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("auth_id", user.id)
-      .single();
-
-    return error ? null : data;
+/**
+ * Actualiza la información del usuario en Firestore
+ * @param userId - ID del usuario en Firestore
+ * @param userData - Datos a actualizar
+ */
+export const updateUserProfile = async (userId: string, userData: Partial<User>) => {
+  try {
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, { ...userData, updatedAt: new Date().toISOString() });
+    console.log("Usuario actualizado correctamente.");
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    throw error;
   }
+};
 
-  static async updateUser(updatedFields: Partial<User>): Promise<boolean> {
-    // Obtener el usuario autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (!user || authError) return false;
+/**
+ * Sube la foto de perfil del usuario a Firebase Storage y obtiene la URL pública
+ * @param userId - ID del usuario
+ * @param file - Archivo de imagen (Blob o File)
+ * @returns URL de la imagen subida
+ */
+export const uploadProfilePhoto = async (userId: string, file: Blob | File): Promise<string> => {
+  try {
+    const storageRef = ref(storage, `profile_pictures/${userId}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
 
-    // Verificar si el usuario ya existe en la tabla "users"
-    const { data: existingUser, error: selectError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("auth_id", user.id)
-      .single(); // Trae solo un registro
+    // Guardar la URL en Firestore
+    await updateUserProfile(userId, { photo: downloadURL });
 
-    if (selectError && selectError.code !== "PGRST116") {
-        console.error("Error al consultar usuario:", selectError.message);
-        return false;
-    }
-
-    if (!existingUser) {
-        // Si el usuario no existe, insertarlo con datos mínimos
-        const { error: insertError } = await supabase
-          .from("users")
-          .insert({
-            auth_id: user.id,
-            email: user.email,
-            full_name: updatedFields.full_name ?? "", // Si no hay nombre, guardar vacío
-            phone: updatedFields.phone ?? null,
-            profile_picture: updatedFields.profile_picture ?? null,
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
-
-        if (insertError) {
-            console.error("Error al insertar usuario:", insertError.message);
-            return false;
-        }
-
-        return true; // Usuario insertado correctamente
-    }
-
-    // Si el usuario ya existe, realizar la actualización
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ ...updatedFields, updated_at: new Date() })
-      .eq("auth_id", user.id);
-
-    if (updateError) {
-        console.error("Error al actualizar usuario:", updateError.message);
-        return false;
-    }
-
-    return true; // Usuario actualizado correctamente
+    console.log("Foto de perfil subida correctamente.");
+    return downloadURL;
+  } catch (error) {
+    console.error("Error al subir foto de perfil:", error);
+    throw error;
   }
+};
 
-  static async uploadProfilePicture(fileName: string, uri: string): Promise<string | null> {
-    try {
-        // Convertir la URI a un blob
-        console.log("URI de la imagen:", uri);
-        const response = await fetch(uri);
-        const blob = await response.blob();
+/**
+ * Obtiene la información del usuario desde Firestore
+ * @param userId - ID del usuario
+ * @returns Datos del usuario o null si no existe
+ */
+export const getUserProfile = async (userId: string): Promise<User | null> => {
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
 
-        // Subir la imagen al storage de Supabase
-        const { data, error } = await supabase.storage
-          .from("profile_pictures")
-          .upload(fileName, blob, { upsert: true });
-
-        if (error || !data) {
-            console.error("Error al subir imagen:", error?.message);
-            return null;
-        }
-
-        console.log(data);
-        // Obtener la URL pública de la imagen
-        const publicUrl = supabase.storage.from("profile_pictures").getPublicUrl(data.path).data.publicUrl;
-
-        if (!publicUrl) return null;
-
-        // Obtener el usuario autenticado
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (!user || authError) {
-            console.error("Error al obtener usuario autenticado:", authError?.message);
-            return null;
-        }
-
-        // Actualizar la URL de la imagen en la tabla users
-        const { error: updateError } = await supabase
-          .from("users")
-          .update({ profile_picture: publicUrl, updated_at: new Date() })
-          .eq("auth_id", user.id);
-
-        if (updateError) {
-            console.error("Error al actualizar profile_picture:", updateError.message);
-            return null;
-        }
-
-        return publicUrl; // Retornar la URL pública si todo fue exitoso
-    } catch (err) {
-        console.error("Error inesperado al subir imagen:", err);
-        return null;
+    if (userSnap.exists()) {
+      return userSnap.data() as User;
+    } else {
+      console.warn("Usuario no encontrado.");
+      return null;
     }
+  } catch (error) {
+    console.log("Error al obtener usuario:", error);
+    throw error;
   }
+};
 
-
-  
-}
-
-export default UserDatasource;
+/**
+ * Actualiza la contraseña del usuario autenticado
+ * @param newPassword - Nueva contraseña del usuario
+ */
+export const updateUserPassword = async (newPassword: string) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("No hay un usuario autenticado.");
+    }
+    await updatePassword(user, newPassword);
+    console.log("Contraseña actualizada correctamente.");
+  } catch (error) {
+    console.log("Error al actualizar contraseña:", error);
+    throw error;
+  }
+};

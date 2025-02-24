@@ -1,7 +1,10 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth  } from "@/context/AuthContext";
 
 export default function HomeLayout() {
+  const { user, loading } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
