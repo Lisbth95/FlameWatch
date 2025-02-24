@@ -1,83 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Image, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
-import UserDatasource from "@/data/datasources/userDataSources";
-import { User } from "@/data/types/UserTypes";
+import {getUserProfile, updateUserProfile, uploadProfilePhoto} from "@/data/datasources/userDataSources";
+import { User } from "@/data/models/users";
+import { useAuth } from "@/context/AuthContext";
 
 export default function UserProfile() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout } = useAuth();
+  const [userData, setUserData] = useState<User | null>(null);
   const [updatedUser, setUpdatedUser] = useState<Partial<User>>({});
-  const [loading, setLoading] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
-      setLoading(true);
-      const currentUser = await UserDatasource.getCurrentUser();
-      setUser(currentUser);
+      setCargando(true);
+      console.log("user: "+user);
+      console.log(userData);
+      const currentUser = await getUserProfile(user?.uid||"");
+      setUserData(currentUser);
       setUpdatedUser({
-        full_name: currentUser?.full_name || "",
+        name: currentUser?.name || "",
         phone: currentUser?.phone || "",
-        profile_picture: currentUser?.profile_picture || "",
+        address: currentUser?.address || "",
       });
-      setLoading(false);
+      setCargando(false);
     };
 
     fetchUser();
   }, []);
 
   const handleUpdateProfile = async () => {
-    if (!updatedUser.full_name || !updatedUser.phone) {
-      Alert.alert("Error", "Por favor completa todos los campos.");
-      return;
+    try {
+      if (!updatedUser.name) {
+        Alert.alert("Error", "Por favor completa todos los campos.");
+        return;
+      }
+  
+      setCargando(true);
+      const success = await updateUserProfile(user?.uid|| "", updatedUser);
+        Alert.alert("Éxito", "Perfil actualizado correctamente.");
+        setUserData({ ...userData, ...updatedUser });
+    } catch (error) {
+      Alert.alert("Error", "Servicio no disponible intente mas tarde");
+    }finally{
+      setCargando(false);
     }
-
-    setLoading(true);
-    const success = await UserDatasource.updateUser(updatedUser);
-    setLoading(false);
-
-    if (success) {
-      Alert.alert("Éxito", "Perfil actualizado correctamente.");
-      setUser({ ...user, ...updatedUser });
-    } else {
-      Alert.alert("Error", "No se pudo actualizar el perfil.");
-    }
+    
   };
 
   const handlePickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permiso requerido", "Se necesita acceso a la galería.");
-      return;
-    }
-
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.7,
+      quality: 1,
     });
 
     if (!result.canceled) {
-      const { uri } = result.assets[0];
-      const fileName = `profile_${user?.id}.jpg`;
-      setLoading(true);
-      const publicUrl = await UserDatasource.uploadProfilePicture(fileName, uri);
-      setLoading(false);
+      const imageUri = result.assets[0].uri;
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      setCargando(true);
+      const publicUrl = await uploadProfilePhoto(user?.uid|| "", blob);
+      setCargando(false);
 
       if (publicUrl) {
-        setUpdatedUser({ ...updatedUser, profile_picture: publicUrl });
-        await UserDatasource.updateUser({ profile_picture: publicUrl });
-        setUser({ ...user, profile_picture: publicUrl });
+        setUserData({ ...userData, photo: publicUrl });
       } else {
         Alert.alert("Error", "No se pudo subir la imagen.");
       }
     }
   };
 
-  if (loading) {
-    return <Text style={{ color: "#FFF"}}>Cargando...</Text>;
-  }
+   if (cargando) return <ActivityIndicator size="large" color="#0000ff" />;
 
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: "#1E1E1E" }}>
@@ -85,24 +81,24 @@ export default function UserProfile() {
         Perfil de Usuario
       </Text>
 
-      {(!user?.full_name || !user?.phone) && (
+      {(!userData?.name) && (
         <Text style={{ color: "yellow", marginBottom: 10 }}>
           Tu perfil está incompleto. Por favor, actualiza tu información.
         </Text>
       )}
 
       <TouchableOpacity onPress={handlePickImage} style={{ alignSelf: "center", marginBottom: 20 }}>
-        {updatedUser.profile_picture ? (
-          <Image source={{ uri: updatedUser.profile_picture }} style={{ width: 100, height: 100, borderRadius: 50 }} />
+        { userData?.photo != "" ? (
+          <Image source={{ uri: userData?.photo }} style={{ width: 100, height: 100, borderRadius: 50 }} />
         ) : (
-          <Ionicons name="person-circle-outline" size={100} color="#FF6B00" />
+          <Image source={{ uri: "https://picsum.photos/id/57/200" }} style={{ width: 100, height: 100, borderRadius: 50 }} />
         )}
       </TouchableOpacity>
 
       <TextInput
         placeholder="Nombre Completo"
-        value={updatedUser.full_name}
-        onChangeText={(text) => setUpdatedUser({ ...updatedUser, full_name: text })}
+        value={updatedUser.name}
+        onChangeText={(text) => setUpdatedUser({ ...updatedUser, name: text })}
         style={{ backgroundColor: "#2E2E2E", color: "#FFF", padding: 10, borderRadius: 8, marginBottom: 10 }}
       />
 
@@ -111,6 +107,13 @@ export default function UserProfile() {
         keyboardType="phone-pad"
         value={updatedUser.phone}
         onChangeText={(text) => setUpdatedUser({ ...updatedUser, phone: text })}
+        style={{ backgroundColor: "#2E2E2E", color: "#FFF", padding: 10, borderRadius: 8, marginBottom: 10 }}
+      />
+
+      <TextInput
+        placeholder="Dirección"
+        value={updatedUser.address}
+        onChangeText={(text) => setUpdatedUser({ ...updatedUser, address: text })}
         style={{ backgroundColor: "#2E2E2E", color: "#FFF", padding: 10, borderRadius: 8, marginBottom: 10 }}
       />
 

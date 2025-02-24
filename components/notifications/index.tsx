@@ -1,7 +1,7 @@
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Notification } from "@/data/types/notificationTypes";
+import { Notification } from "@/data/models/notifications";
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -10,7 +10,7 @@ export default function NotificationsScreen() {
     { id: "3", type: "smoke", message: "⚠️ Humo detectado en el garaje", timestamp: "Hace 20 min" },
   ]);
 
-  const getIcon = (type: Notification["type"]) => {
+  const getIcon = (type: string) => {
     switch (type) {
       case "motion":
         return <Ionicons name="walk" size={24} color="#FF6B00" />;

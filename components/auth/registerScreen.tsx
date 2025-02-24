@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert,StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { supabase } from "../../lib/supabase";
+import { registerUser } from '@/api/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -11,20 +11,21 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden");
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-
-    if (error) {
-      Alert.alert("Error", error.message);
-    } else {
-      Alert.alert("Registro Exitoso", "Verifica tu correo electrónico para confirmar la cuenta.");
-      router.replace("/(auth)/login"); // Redirigir a la pantalla de login
+    try {
+      if (password !== confirmPassword) {
+        Alert.alert("Error", "Las contraseñas no coinciden");
+        return;
+      }
+      setLoading(true);
+      const credentials = await registerUser(email, password);
+      if (credentials) {
+        Alert.alert("FlameWatch", "Registro Exitoso");
+        router.replace("/(auth)/login"); // Redirigir a la pantalla de login
+      }
+    } catch (error) {
+      Alert.alert("Error", (error as Error).message);
+    }finally{
+      setLoading(false);
     }
   };
 

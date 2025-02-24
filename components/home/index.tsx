@@ -1,15 +1,10 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  FlatList,
-  StyleSheet,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View,Text,ScrollView,TouchableOpacity,Image,StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CameraPreviewCard from "@/components/ui/cameraPrevieCard";
+import { User } from '@/data/models/users';
+import {getUserProfile} from '@/data/datasources/userDataSources';
+import { useAuth } from "@/context/AuthContext";
 
 const cameras = [
   {id: 1, image: require("@/assets/images/room1.jpeg") }, // Simulación de cámaras
@@ -17,19 +12,39 @@ const cameras = [
 ];
 
 export default function HomeScreen() {
-  const [devices, setDevices] = useState([
-    { id: "1", name: "Cámaras", status: "Activo", location: "Sala" },
-    { id: "2", name: "Sensores", status: "Activo", location: "Cocina" },
-  ]);
+   const { user} = useAuth();
+  const [userData, setUserData] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Si no tenemos los datos, podríamos hacer una consulta a Firestore
+    const fetchUserData = async () => {
+      setLoading(true);
+      console.log(userData);
+      console.log("uuid: "+user?.uid);
+      if (user && user.uid) {
+        const profile = await getUserProfile(user.uid);
+        setUserData(profile);
+      }
+      setLoading(false);
+    };
+  }, []);
+
+  if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
 
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Image source={{ uri: "https://i.pravatar.cc/100" }} style={styles.profileImage} />
+        <Image
+          source={{ uri: userData?.photo || "https://picsum.photos/id/57/200" }}
+          style={styles.profileImage}
+        />
+        
         <View>
           <Text style={styles.greeting}>Bienvenido</Text>
-          <Text style={styles.userName}>Carlos</Text>
+          <Text style={styles.userName}>{userData?.name?.trim() || userData?.email}</Text>
+          
         </View>
         <TouchableOpacity>
           <Ionicons name="notifications-outline" size={28} color="#FF6B00" />
@@ -87,7 +102,7 @@ export default function HomeScreen() {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1E1E1E", padding: 20 },
+  container: { flex: 1, backgroundColor: "#1E1E1E", padding: 25, marginTop:15 },
   container_image: {
     width: "100%",
     height: 200,
@@ -101,7 +116,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   profileImage: { width: 50, height: 50, borderRadius: 25, borderWidth: 2, borderColor: "#FF6B00" },
   greeting: { color: "#FFF", fontSize: 16 },
-  userName: { color: "#FF6B00", fontSize: 20, fontWeight: "bold" },
+  userName: { color: "#FFF", fontSize: 20, fontWeight: "bold" },
   sectionTitle: { color: "#FFF", fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   deviceCard: { backgroundColor: "#2E2E2E", padding: 15, borderRadius: 10, width: 120, alignItems: "center", marginRight: 10 },
   deviceName: { color: "#FFF", fontSize: 14, fontWeight: "bold", marginTop: 5 },
