@@ -2,16 +2,25 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
+import { useAuth } from "@/context/AuthContext";
+import { Redirect } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function StatisticsScreen() {
+  const { user, loading } = useAuth();
   const totalAlerts = {
     motion: 14,
     fire: 3,
     smoke: 5,
   };
 
+  if (loading) return null; // O muestra un loader
+
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+  
   const chartData = {
     labels: ["Movimiento", "Fuego", "Humo"],
     datasets: [
@@ -71,6 +80,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FF6B00",
     marginBottom: 20,
+    marginTop: 20
   },
   alertSummary: {
     flexDirection: "row",

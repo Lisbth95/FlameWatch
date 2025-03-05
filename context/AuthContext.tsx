@@ -1,24 +1,31 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, User, signOut  } from "firebase/auth";
+import * as SecureStore from "expo-secure-store";
+import { auth } from "@/api/firebase";
 
-const AuthContext = createContext<{ 
-  user: User | null; 
+interface AuthContextType {
+  user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
-}>({
-  user: null,
-  loading: true,
-  logout: async () => {}
-});
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  //const [user, setUser] = useState<User | null>(null);
+  //const [loading, setLoading] = useState(true);
+  //const auth = getAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth = getAuth();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      if (user) {
+        await SecureStore.setItemAsync("userToken", user.uid);
+      } else {
+        await SecureStore.deleteItemAsync("userToken");
+      }
       setLoading(false);
     });
 
@@ -26,8 +33,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
-    setUser(null); // 🔹 Asegurar que el estado se actualiza correctamente
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Error cerrando sesión:", error);
+    }
   };
 
   return (
@@ -37,4 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth debe usarse dentro de un AuthProvider");
+  }
+  return context;
+};

@@ -16,7 +16,17 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.lcatalan.FlameWatch"
+      "package": "com.lcatalan.FlameWatch",
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD_gynzXYDZdgVhkfkL6Mah-uq59NWzPcE"
+        }
+      }
     },
     "web": {
       "bundler": "metro",
@@ -34,10 +44,30 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysUsageDescription": "Allow app to access location even when closed"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "8fbd6f7b-79dc-46f1-a7d4-37cc828e9949"
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert,StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { registerUser } from '@/api/auth';
+import { registerUser } from '@/data/datasources/authDataSources';
 
 export default function RegisterScreen() {
   const router = useRouter();

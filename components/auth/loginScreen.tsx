@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
-import {loginUser} from '@/api/auth';
+import {loginUser} from '@/data/datasources/authDataSources';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -50,8 +50,8 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Cargando..." : "Iniciar Sesión"}</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}> Iniciar Sesión</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push("/(auth)/forgot_password")}>
         <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>

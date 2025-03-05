@@ -14,8 +14,8 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchUser = async () => {
       setCargando(true);
-      console.log("user: "+user);
-      console.log(userData);
+      //console.log("user: "+user);
+      //console.log(userData);
       const currentUser = await getUserProfile(user?.uid||"");
       setUserData(currentUser);
       setUpdatedUser({
@@ -76,11 +76,7 @@ export default function UserProfile() {
    if (cargando) return <ActivityIndicator size="large" color="#0000ff" />;
 
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: "#1E1E1E" }}>
-      <Text style={{ color: "#FFF", fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>
-        Perfil de Usuario
-      </Text>
-
+    <View style={{ flex: 1, padding: 20, backgroundColor: "#1E1E1E"}}>
       {(!userData?.name) && (
         <Text style={{ color: "yellow", marginBottom: 10 }}>
           Tu perfil está incompleto. Por favor, actualiza tu información.

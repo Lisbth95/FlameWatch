@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { View,Text,TextInput,TouchableOpacity,StyleSheet} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {updateUserPassword} from '@/data/datasources/userDataSources';
-import { Try } from "expo-router/build/views/Try";
+import { useRouter } from "expo-router";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   const handleChangePassword = async() => {
     try{
@@ -17,7 +18,10 @@ export default function ChangePasswordScreen() {
         return;
       }
       await updateUserPassword(newPassword);
+      alert("Contraseña actualizada correctamente.");
+      router.push("/(auth)/login");
     }catch (error){
+      console.log(error);
       alert("Servicio no disponible, intente más tarde.");
     }
   };

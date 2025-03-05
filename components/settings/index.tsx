@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { View, Text, Switch, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+
 import { useAuth } from "@/context/AuthContext";
+import { Redirect } from "expo-router";
 
 export default function SettingsScreen(){
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+
   const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
@@ -16,6 +19,12 @@ export default function SettingsScreen(){
       { text: "Cerrar sesión", onPress: logout },
     ]);
   };
+
+  if (loading) return null; // O un spinner
+
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <View style={styles.container}>
@@ -67,6 +76,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#FFF",
     marginBottom: 20,
+    marginTop: 20,
   },
   option: {
     flexDirection: "row",
