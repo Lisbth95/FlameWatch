@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { supabase } from "@/lib/supabase";
+import {forgotPassword} from '@/data/datasources/authDataSources';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -9,24 +9,23 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email) {
-      Alert.alert("Error", "Por favor, ingresa tu correo electrónico.");
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    setLoading(false);
-
-    if (error) {
-      Alert.alert("Error", error.message);
-    } else {
+    try {
+      if (!email) {
+        Alert.alert("Error", "Por favor, ingresa tu correo electrónico.");
+        return;
+      }
+      await forgotPassword(email);
+      setEmail("");
       Alert.alert(
         "Correo Enviado",
         "Revisa tu bandeja de entrada para restablecer tu contraseña."
       );
-      router.replace("/(auth)/login"); // Redirige al login después del envío
+      router.push("/(auth)/login");
+    } catch (error) {
+      console.log("Error enviando email de recuperación:", error);
+      return;
     }
+  
   };
 
   return (

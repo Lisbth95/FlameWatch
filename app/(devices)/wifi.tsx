@@ -1,4 +1,4 @@
-import HomeScreen from '@/components/home/index';
+import WifihScreen from '@/components/devices/wifiDevice';
 import { useAuth } from "@/context/AuthContext";
 import { Redirect } from "expo-router";
 
@@ -12,6 +12,6 @@ export default function InicioScreen() {
   }
 
   return (
-    <HomeScreen/>
+    <WifihScreen/>
   );
 }
