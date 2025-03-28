@@ -56,7 +56,8 @@
         {
           "locationAlwaysUsageDescription": "Allow app to access location even when closed"
         }
-      ]
+      ],
+      "react-native-wifi-reborn"
     ],
     "experiments": {
       "typedRoutes": true

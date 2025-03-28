@@ -31,6 +31,7 @@ export const loginUser = async (email: string, password: string) => {
       }
 
     } catch (error) {
+      console.log(error);
         Alert.alert("FlameWatch","Usuario y/o contraseña invalida");
         //console.error("Error en el inicio de sesión:", error);
       throw error;

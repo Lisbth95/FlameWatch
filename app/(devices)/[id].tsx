@@ -1,8 +1,8 @@
-import WifihScreen from '@/components/devices/wifiDevice';
+import DetailDevicesScreen from '@/components/devices/detail';
 import { useAuth } from "@/context/AuthContext";
 import { Redirect } from "expo-router";
 
-export default function WiFiScreen() {
+export default function DeviceDetailScreen() {
   const { user, loading } = useAuth();
 
   if (loading) return null; // O muestra un loader
@@ -12,6 +12,6 @@ export default function WiFiScreen() {
   }
 
   return (
-    <WifihScreen/>
+    <DetailDevicesScreen/>
   );
 }
