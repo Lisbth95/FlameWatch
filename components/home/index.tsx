@@ -162,7 +162,7 @@ export default function HomeScreen() {
             onPress={() => console.log('Pressed')}
           />
           <FAB
-            icon="lightbulb-on"
+            icon="ceiling-light-multiple"
             style={styles.fab}
             onPress={() => console.log('Pressed')}
           />
